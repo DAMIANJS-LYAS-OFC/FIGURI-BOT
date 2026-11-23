@@ -7,15 +7,15 @@ const handler = async (m, { conn }) => {
   )
 
   if (!owners.includes(sender)) {
-    return m.reply('✗ 『ERROR』➤ Solo el owner puede usar este comando.')
+    return m.reply('✗ Solo el owner puede usar este comando.')
   }
 
-  await m.reply('👾 『CARGANDO』➤ Recargando plugins...')
+  await m.reply('❀ 『CARGANDO』➤ Recargando plugins...')
 
   const { loadPlugins } = await import('../../handler.js')
   const total = await loadPlugins()
 
-  await m.reply(`👾 『PLUGINS』➤ ${total} 『RECARGADOS CON EXITO』`)
+  await m.reply(`❀ 『PLUGINS』➤ ${total} 『RECARGADOS CON EXITO』`)
 }
 
 handler.help = ['cargar']
