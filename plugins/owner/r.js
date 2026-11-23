@@ -3,38 +3,15 @@ import path from 'path'
 import sharp from 'sharp'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import config from '../config.js'
 
 const execute = promisify(exec)
 
 const handler = async (m, { conn, args }) => {
-  const chat = m.chat
-
-  const normalize = value => String(value || '').trim().toLowerCase()
-  const cleanNumber = value => normalize(value).split('@')[0].split(':')[0].replace(/\D/g, '')
-
-  const ownerSources = [
-    config.owner,
-    config.owners,
-    config.ownerNumber,
-    conn.subConfig?.owner,
-    conn.principalConfig?.owner
-  ]
-
-  const ownerList = ownerSources.flatMap(value => Array.isArray(value) ? value : [value]).filter(Boolean)
-  const sender = normalize(m.sender)
-  const senderNumber = cleanNumber(sender)
-
-  const isOwner = ownerList.some(owner => {
-    const id = typeof owner === 'object' ? owner.id || owner.jid || owner.number || owner.phone : owner
-    const normalizedId = normalize(id)
-    if (!normalizedId) return false
-    if (normalizedId === sender) return true
-    const ownerNumber = cleanNumber(normalizedId)
-    return ownerNumber && senderNumber && ownerNumber === senderNumber
-  })
-
-  if (!isOwner) {
+  const sender = String(m.sender || '').split('@')[0].split(':')[0]
+  const owners = (globalThis.owner || []).map(o =>
+    String(Array.isArray(o) ? o[0] : o).split('@')[0].split(':')[0]
+  )
+  if (!owners.includes(sender)) {
     return m.reply(
       '╭─〔 ACCESO DENEGADO 〕\n' +
       '│ ✗ No tienes autorización.\n' +
@@ -43,7 +20,8 @@ const handler = async (m, { conn, args }) => {
     )
   }
 
-  const botName = conn.subConfig?.name || conn.principalConfig?.name || config.name || config.botName || 'Bot'
+  const chat = m.chat
+  const botName = globalThis.botName || globalThis.namebot || 'Bot'
   const botNumber = String(conn.user?.id || '').split('@')[0].split(':')[0].replace(/\D/g, '')
   const iconDir = path.join(process.cwd(), 'storage', 'icons')
 
@@ -51,9 +29,7 @@ const handler = async (m, { conn, args }) => {
   async function sendPNJ(text) {
     try {
       const candidates = [
-        conn.subConfig?.icon,
-        conn.principalConfig?.icon,
-        config.icon,
+        globalThis.icon,
         path.join(iconDir, `${botNumber}.jpg`),
         path.join(iconDir, `${botNumber}.jpeg`),
         path.join(iconDir, `${botNumber}.png`),
