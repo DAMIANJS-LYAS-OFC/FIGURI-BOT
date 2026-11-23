@@ -24,17 +24,38 @@ function logComandoExito(comando) {
   console.log(`${c.green}🧧╚═══════════════════════════🧧${c.reset}`)
 }
 
+// ══════════════ BUSCAR .js EN SUBCARPETAS ══════════════
+function getPluginFiles(dir) {
+  let files = []
+  if (!fs.existsSync(dir)) return files
+
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    // No cargar node_modules ni carpetas ocultas
+    if (entry.name.startsWith('.') || entry.name === 'node_modules') continue
+    if (entry.isDirectory()) {
+      files.push(...getPluginFiles(full))
+    } else if (entry.isFile() && entry.name.endsWith('.js')) {
+      files.push(full)
+    }
+  }
+  return files
+}
+
 export async function loadPlugins() {
   if (!fs.existsSync(pluginDir)) {
     fs.mkdirSync(pluginDir, { recursive: true })
   }
 
-  const files = fs.readdirSync(pluginDir)
-    .filter(file => file.endsWith('.js'))
+  // Limpia plugins viejos para no duplicar al recargar
+  global.plugins = {}
+  const files = getPluginFiles(pluginDir)
 
-  for (const file of files) {
+  for (const fullPath of files) {
+    // Nombre relativo para que no choquen: tools/menu.js, juegos/ruleta.js
+    const rel = path.relative(pluginDir, fullPath).split(path.sep).join('/')
     try {
-      const url = pathToFileURL(path.join(pluginDir, file))
+      const url = pathToFileURL(fullPath)
       url.searchParams.set('update', Date.now())
 
       const imported = await import(url.href)
@@ -42,11 +63,11 @@ export async function loadPlugins() {
 
       if (typeof plugin !== 'function') continue
 
-      global.plugins[file] = plugin
+      global.plugins[rel] = plugin
 
-      console.log(`👾 『PLUGIN CARGADO』➤ ${file}`)
+      console.log(`👾 『PLUGIN CARGADO』➤ ${rel}`)
     } catch (e) {
-      console.error(`👾 『ERROR PLUGIN』➤ ${file} ➤ ${e.message}`)
+      console.error(`👾 『ERROR PLUGIN』➤ ${rel} ➤ ${e.message}`)
     }
   }
 
@@ -145,4 +166,4 @@ export async function handleMessages(conn, update) {
       break
     }
   }
-      }
+        }
