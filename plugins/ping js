@@ -1,0 +1,15 @@
+const handler = async (m, { conn }) => {
+  // Latencia real: desde que te llegó el mensaje hasta que responde
+  const msgTime = Number(m.messageTimestamp) * 1000 || Date.now()
+  const latency = Date.now() - msgTime
+
+  await m.reply(`❀ Pong _${latency}ms_`)
+}
+
+handler.help = ['ping']
+handler.alias = ['p']
+handler.tags = ['tools']
+handler.descrip = ['Calcula la tensión del bot']
+handler.command = /^(?:ping|p)$/i
+
+export default handler
